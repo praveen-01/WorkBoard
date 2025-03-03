@@ -52,21 +52,25 @@ WorkBoard is a job posting platform built using FastAPI, allowing users to regis
 - `POST /signup` – Register a new user.
   
   **Request:**
- ```curl http://127.0.0.1:8000/signup --header 'Content-Type: application/json' \
-    --data '{
-    "username": "sampletestuser",
-    "password": "sampletestpassword"
-}'```
-  
+    ```
+        curl http://127.0.0.1:8000/signup --header "Content-Type: application/json" \
+            --data '{
+            "username": "sampletestuser",
+            "password": "sampletestpassword"
+        }'
+    ```
   **Response:**
-  ```json
-  {"message":"User registered successfully"}
+  ```
+    {
+        "message":"User registered successfully"
+    }
   ```
 
 - `POST /login` – Log in and receive an access token.
   
   **Request:**
-  ```curl --location 'http://127.0.0.1:8000/login' \
+  ```
+    curl --location 'http://127.0.0.1:8000/login' \
     --header 'Content-Type: application/json' \
     --data '{
         "username": "sampletestuser",
@@ -75,40 +79,98 @@ WorkBoard is a job posting platform built using FastAPI, allowing users to regis
   ```
   
   **Response:**
-  ```json
-    {"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA5ODIzNzEsInN1YiI6InNhbXBsZXRlc3R1c2VyIn0.1VOcC_UsU5qtraDoSGwsB1OeRmnt5c4PXGLbv62Ovys","token_type":"bearer"}
+  ```
+    {
+        "access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA5ODIzNzEsInN1YiI6InNhbXBsZXRlc3R1c2VyIn0.1VOcC_UsU5qtraDoSGwsB1OeRmnt5c4PXGLbv62Ovys",
+        "token_type":"bearer"
+    }
   ```
 
 ### Jobs Management
 
-- `GET /jobs` – List all jobs.
+- `GET /jobs` – Get all jobs with filtering options.
   
   **Request:**
-  ```json
-  {
-    "title": "Software Engineer",
-    "company": "TechCorp",
-    "location": "Remote",
-    "description": "Develop and maintain software applications."
-  }
+  ```
+    $ curl --location 'http://127.0.0.1:8000/jobs'
   ```
   
   **Response:**
-  ```json
-  {
-    "id": 1,
-    "title": "Software Engineer",
-    "company": "TechCorp",
-    "location": "Remote",
-    "description": "Develop and maintain software applications.",
-    "owner_id": 123
-  }
+  ```
+    [
+      {
+          "id":1,
+          "title":"engineer",
+          "company":"amazon",
+          "location":"hyderabad",
+          "type":"full-time",
+          "link":"www.bcci.com",
+          "description":"it is a full tim software engineer role",
+          "user_id":1,
+          "created_at":"2025-03-03 09:43:34",
+          "updated_at":"2025-03-03 09:43:34"
+        }
+    ]
   ```
 
-- `PUT /jobs/{id}` – Update a job (Only by the owner).
-- `DELETE /jobs/{id}` – Delete a job (Only by the owner).
-- `GET /jobs` – Get all jobs with filtering options.
 - `GET /jobs/{id}` – Get job details by ID.
+  **Request:**
+  ```
+    $ curl --location 'http://127.0.0.1:8000/jobs/1'
+
+  ```
+
+  **Response:**
+  ```
+    [
+      {
+          "id":1,
+          "title":"engineer",
+          "company":"amazon",
+          "location":"hyderabad",
+          "type":"full-time",
+          "link":"www.bcci.com",
+          "description":"it is a full tim software engineer role",
+          "user_id":1,
+          "created_at":"2025-03-03 09:43:34",
+          "updated_at":"2025-03-03 09:43:34"
+        }
+    ]
+  ```
+- `POST /jobs/{id}` – Add a job (Only by the authenticated user).
+
+  **Request:**
+  ```
+    $ curl --location 'http://127.0.0.1:8000/post-job' --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA5ODM4NzgsInN1YiI6InNhbXBsZXRlc3R1c2VyIn0.RzT00LB4f3ZXx9RigSFTFTdQpwk8M-C-fvDnU7hVDSY' --header 'Content-Type: application/json' --data 
+    '{
+        "title": "engineer",
+        "company": "uptycs",
+        "location": "hyderabad",
+        "type": "full-time",
+        "link": "www.bcci.com",
+        "description": "it is a full tim software engineer role"
+    }'
+  ```
+  **Response:**
+  ```
+    {
+        "message":"job added successfully"
+    }
+  ```
+
+- `DELETE /jobs/{id}` – Delete a job (Only by the owner).
+  **Request**
+  ```
+    $ curl --location --request DELETE 'http://127.0.0.1:8000/jobs/2' --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA5ODQyNDcsInN1YiI6InNhbXBsZXRlc3R1c2VyIn0.z_VWqXV3wZxbe4Ncx50TCUmXE7Hv6xg92Vz3lpTWdEA'
+
+  ```
+  **Response**
+  ```
+    {
+        "message":"job deleted successfully"
+    }
+  ```
+
 
 ## Environment Variables
 
