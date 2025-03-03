@@ -119,7 +119,7 @@ def update_job_record(job_id: int,username: str = Depends(valid_token)):
         if not job_user:
             raise HTTPException(status_code = 404, detail="No job found")
         elif job_user[0]!=user_details[0]:
-            raise HTTPException(status_code = 403, detail="Invalid operation. You can only edit jobs posted by you!!")
+            raise HTTPException(status_code = 403, detail="Invalid operation. You can only delete jobs posted by you!!")
         params={"job_id":job_id}
         update_job = connection.execute(text("DELETE FROM jobs WHERE id=:job_id"),params)
         connection.commit()
