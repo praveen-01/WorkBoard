@@ -31,6 +31,7 @@ def create_tables():
             link TEXT,
             description TEXT,
             user_id INTEGER NOT NULL,
+            is_job_present INTEGER NOT NULL,
             created_at TIMESTAMP DEFAULT (datetime('now', 'localtime')),
             updated_at TIMESTAMP DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

@@ -1,4 +1,4 @@
-from fastapi import FastAPI,HTTPException,status,Depends
+from fastapi import FastAPI,HTTPException,status,Depends,Request
 from fastapi.security import OAuth2PasswordBearer
 from database import engine
 from sqlalchemy import text
@@ -6,10 +6,17 @@ from models import Signuprequest,Jobpost
 import bcrypt
 import datetime
 import jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 
 SECRET_KEY = "samplesecretkey@12345678901"
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 
 def valid_token(token: str = Depends(oauth2_scheme)):
     try:
@@ -74,14 +81,15 @@ def post_job(job_data: Jobpost,username: str = Depends(valid_token)):
         "location": job_data.location,
         "type": job_data.type,
         "link": job_data.link,
-        "description": job_data.description
+        "description": job_data.description,
+        "is_job_present": 0
         }
     with engine.connect() as connection:
         user_details = connection.execute(text("Select id from users where username = :user"),{"user": username}).fetchone()
         if not user_details:
             raise HTTPException(status_code = 400, detail="Invalid user!")
         params["user_id"]=user_details[0]
-        db = connection.execute(text("INSERT INTO JOBS (title,company,location,type,link,description,user_id) VALUES (:title,:company,:location,:type,:link,:description,:user_id)"),params)
+        db = connection.execute(text("INSERT INTO JOBS (title,company,location,type,link,description,user_id,is_job_present) VALUES (:title,:company,:location,:type,:link,:description,:user_id,:is_job_present)"),params)
         connection.commit()
         return {"message": "job added successfully"}
 
@@ -119,14 +127,16 @@ def update_job_record(job_id: int,username: str = Depends(valid_token)):
         if not job_user:
             raise HTTPException(status_code = 404, detail="No job found")
         elif job_user[0]!=user_details[0]:
-            raise HTTPException(status_code = 403, detail="Invalid operation. You can only delete jobs posted by you!!")
-        params={"job_id":job_id}
-        update_job = connection.execute(text("DELETE FROM jobs WHERE id=:job_id"),params)
+            raise HTTPException(status_code = 403, detail="Invalid operation. You can only edit jobs posted by you!!")
+        params={"job_id":job_id,"set_job":1}
+        update_job = connection.execute(text("UPDATE jobs SET is_job_present =:set_job WHERE id=:job_id"),params)
         connection.commit()
         return {"message": "job deleted successfully"}
 
 @app.get("/jobs")
-def get_all_jobs(title: str | None = None,
+@limiter.limit("10/minute")
+def get_all_jobs(request: Request,
+                 title: str | None = None,
                  location: str | None = None,
                  type: str | None=None,
                  limit: int = 10,
@@ -151,8 +161,10 @@ def get_all_jobs(title: str | None = None,
     if query_construct:
         query+="WHERE "+ " AND ".join(query_construct)
     
+    query += " where is_job_present =:present"
     query += " ORDER BY created_at,updated_at desc "
     query += " LIMIT :limit OFFSET :offset"
+    params["present"] = 0
     params["limit"] = limit
     params["offset"] = offset
     
